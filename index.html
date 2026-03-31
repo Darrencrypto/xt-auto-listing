@@ -440,18 +440,28 @@
     <div class="page-title">热门币发现</div>
     <div class="filter-area">
         <div class="filter-row">
-            <select class="filter-select"><option>全部状态</option><option>待确认</option><option>已确认</option><option>观察池</option></select>
+            <select class="filter-select" id="discoverFilter" onchange="filterDiscover()">
+                <option value="pending" selected>待确认</option>
+                <option value="confirmed">已确认</option>
+                <option value="watch">观察池</option>
+                <option value="all">全部</option>
+            </select>
             <select class="filter-select"><option>全部链</option><option>ETH</option><option>SOL</option><option>BSC</option><option>BASE</option></select>
             <input class="filter-input" placeholder="搜索币种名称或合约">
             <div class="filter-right">
                 <button class="btn btn-search">查询</button>
-                <button class="btn btn-reset">重置</button>
+                <button class="btn btn-reset" onclick="document.getElementById('discoverFilter').value='pending';filterDiscover();">重置</button>
             </div>
         </div>
     </div>
-    <div class="discover-grid">
-        <div class="discover-card">
-            <div class="card-head"><span class="coin-sym">PEPE2.0</span><span class="coin-chg up">+128.5%</span></div>
+    <div class="discover-grid" id="discoverGrid">
+        <!-- 待确认 -->
+        <div class="discover-card" data-status="pending">
+            <div class="card-head">
+                <span class="coin-sym">PEPE2.0</span>
+                <span class="coin-chg up">+128.5%</span>
+            </div>
+            <div style="margin-bottom:8px;"><span class="tag tag-orange">待确认</span> <span style="font-size:10px;color:#c0c4cc;margin-left:4px;">10分钟前</span></div>
             <div class="card-info">链: <b>ETH</b> · ERC20<br>市值: $45,200,000<br>已上线: Bybit, Gate, MEXC<br>合约: 0x3a4f8B2c9D1e5F7a0B3c6D8e1F4a7B9c2D5e8F</div>
             <div class="card-actions">
                 <button class="btn btn-green" onclick="alert('✅ 信息确认，AI 将发起 Lark 审批流')">✅ 信息确认</button>
@@ -460,9 +470,12 @@
                 <button class="btn btn-plain" onclick="openDetail()">详情</button>
             </div>
         </div>
-
-        <div class="discover-card">
-            <div class="card-head"><span class="coin-sym">MOODENG</span><span class="coin-chg up">+85.2%</span></div>
+        <div class="discover-card" data-status="pending">
+            <div class="card-head">
+                <span class="coin-sym">MOODENG</span>
+                <span class="coin-chg up">+85.2%</span>
+            </div>
+            <div style="margin-bottom:8px;"><span class="tag tag-orange">待确认</span> <span style="font-size:10px;color:#c0c4cc;margin-left:4px;">25分钟前</span></div>
             <div class="card-info">链: <b>SOL</b> · SPL<br>市值: $120,500,000<br>已上线: Binance, OKX, Bybit<br>合约: 7gkRv2mE9xQ4pN8wL1bY5tK3fH6jA0cZ7dS2uX4r</div>
             <div class="card-actions">
                 <button class="btn btn-green" onclick="alert('✅ 信息确认，AI 将发起 Lark 审批流')">✅ 信息确认</button>
@@ -471,9 +484,12 @@
                 <button class="btn btn-plain" onclick="openDetail()">详情</button>
             </div>
         </div>
-
-        <div class="discover-card">
-            <div class="card-head"><span class="coin-sym">BRETT</span><span class="coin-chg up">+62.1%</span></div>
+        <div class="discover-card" data-status="pending">
+            <div class="card-head">
+                <span class="coin-sym">BRETT</span>
+                <span class="coin-chg up">+62.1%</span>
+            </div>
+            <div style="margin-bottom:8px;"><span class="tag tag-orange">待确认</span> <span style="font-size:10px;color:#c0c4cc;margin-left:4px;">1小时前</span></div>
             <div class="card-info">链: <b>BASE</b> · ERC20<br>市值: $78,000,000<br>已上线: Bybit, Gate, KuCoin<br>合约: 0x53274e6F9a1D8b3C7f2E5d0A4c8B1e6F3a9D7c</div>
             <div class="card-actions">
                 <button class="btn btn-green" onclick="alert('✅ 信息确认，AI 将发起 Lark 审批流')">✅ 信息确认</button>
@@ -482,29 +498,77 @@
                 <button class="btn btn-plain" onclick="openDetail()">详情</button>
             </div>
         </div>
-
-        <div class="discover-card">
-            <div class="card-head"><span class="coin-sym">MOTHER</span><span class="coin-chg up">+41.8%</span></div>
+        <!-- 已确认 -->
+        <div class="discover-card" data-status="confirmed" style="display:none;">
+            <div class="card-head">
+                <span class="coin-sym">TURBO</span>
+                <span class="coin-chg up">+45.3%</span>
+            </div>
+            <div style="margin-bottom:8px;"><span class="tag tag-green">已确认</span> <span style="font-size:10px;color:#c0c4cc;margin-left:4px;">审批流进行中 · 节点5</span></div>
+            <div class="card-info">链: <b>ETH</b> · ERC20<br>市值: $320,000,000<br>已上线: Binance, OKX, Bybit<br>合约: 0xa35923D8f4E7b1C6a9F2d5B8e3A0c4D7f1E6b9</div>
+            <div class="card-actions">
+                <button class="btn btn-plain" onclick="openDetail()">查看进度</button>
+            </div>
+        </div>
+        <div class="discover-card" data-status="confirmed" style="display:none;">
+            <div class="card-head">
+                <span class="coin-sym">NEIRO</span>
+                <span class="coin-chg up">+33.7%</span>
+            </div>
+            <div style="margin-bottom:8px;"><span class="tag tag-green">已确认</span> <span style="font-size:10px;color:#c0c4cc;margin-left:4px;">审批流进行中 · 节点4</span></div>
+            <div class="card-info">链: <b>ETH</b> · ERC20<br>市值: $89,000,000<br>已上线: Bybit, Gate, MEXC<br>合约: 0x7d1eF3a8B5c2D9e4A6f0C1b7E8d3F5a2B4c6D9</div>
+            <div class="card-actions">
+                <button class="btn btn-plain" onclick="openDetail()">查看进度</button>
+            </div>
+        </div>
+        <div class="discover-card" data-status="confirmed" style="display:none;">
+            <div class="card-head">
+                <span class="coin-sym">GOAT</span>
+                <span class="coin-chg up">+34.5%</span>
+            </div>
+            <div style="margin-bottom:8px;"><span class="tag tag-green">已确认</span> <span style="font-size:10px;color:#67c23a;margin-left:4px;">已上线 · 2026-03-30</span></div>
+            <div class="card-info">链: <b>SOL</b> · SPL<br>市值: $180,000,000<br>已上线: Binance, OKX, Bybit, Gate<br>合约: 5tK3fH6jA0cZ7dS2uX4r9wL7bY1pN8qE2mR5gV8</div>
+            <div class="card-actions">
+                <button class="btn btn-plain" onclick="openDetail()">查看详情</button>
+            </div>
+        </div>
+        <!-- 观察池 -->
+        <div class="discover-card" data-status="watch" style="display:none;">
+            <div class="card-head">
+                <span class="coin-sym">MOTHER</span>
+                <span class="coin-chg up">+41.8%</span>
+            </div>
+            <div style="margin-bottom:8px;"><span class="tag tag-gray">观察池</span> <span style="font-size:10px;color:#c0c4cc;margin-left:4px;">加入于 2h前 · 市值偏低</span></div>
             <div class="card-info">链: <b>SOL</b> · SPL<br>市值: $55,000,000<br>已上线: MEXC, Gate<br>合约: 3S8qPw2rK5mN9xL4bY7tH1fJ6cA0dZ8eU3vX5gR</div>
             <div class="card-actions">
-                <button class="btn btn-green" onclick="alert('✅ 信息确认，AI 将发起 Lark 审批流')">✅ 信息确认</button>
-                <button class="btn btn-orange" onclick="alert('✏️ 已通知 AI 修正，修正后将重新发送卡片')">✏️ 需要修正</button>
-                <button class="btn btn-plain" onclick="alert('已加入观察池')">加入观察</button>
+                <button class="btn btn-green" onclick="alert('✅ 重新确认上币')">重新确认</button>
                 <button class="btn btn-plain" onclick="openDetail()">详情</button>
             </div>
         </div>
-
-        <div class="discover-card">
-            <div class="card-head"><span class="coin-sym">PNUT</span><span class="coin-chg down">-5.3%</span></div>
+        <div class="discover-card" data-status="watch" style="display:none;">
+            <div class="card-head">
+                <span class="coin-sym">PNUT</span>
+                <span class="coin-chg down">-5.3%</span>
+            </div>
+            <div style="margin-bottom:8px;"><span class="tag tag-gray">观察池</span> <span style="font-size:10px;color:#c0c4cc;margin-left:4px;">加入于 3h前 · 行情回调</span></div>
             <div class="card-info">链: <b>SOL</b> · SPL<br>市值: $230,000,000<br>已上线: Binance, OKX, Bybit, Gate<br>合约: 2qEHn5kM8pXr3wL7bY1tF4jC9dA6eZ0gS2uV5xR</div>
             <div class="card-actions">
-                <button class="btn btn-green" onclick="alert('✅ 信息确认，AI 将发起 Lark 审批流')">✅ 信息确认</button>
-                <button class="btn btn-orange" onclick="alert('✏️ 已通知 AI 修正，修正后将重新发送卡片')">✏️ 需要修正</button>
-                <button class="btn btn-plain" onclick="alert('已加入观察池')">加入观察</button>
+                <button class="btn btn-green" onclick="alert('✅ 重新确认上币')">重新确认</button>
                 <button class="btn btn-plain" onclick="openDetail()">详情</button>
             </div>
         </div>
-
+        <div class="discover-card" data-status="watch" style="display:none;">
+            <div class="card-head">
+                <span class="coin-sym">MAGA</span>
+                <span class="coin-chg down">-18.2%</span>
+            </div>
+            <div style="margin-bottom:8px;"><span class="tag tag-gray">观察池</span> <span style="font-size:10px;color:#c0c4cc;margin-left:4px;">加入于 1天前 · 合约风险</span></div>
+            <div class="card-info">链: <b>ETH</b> · ERC20<br>市值: $32,000,000<br>已上线: MEXC<br>合约: 0x4a2B8c1D5e7F3a9C6b0E2d4F8a1B3c5D7e9F2a4</div>
+            <div class="card-actions">
+                <button class="btn btn-green" onclick="alert('✅ 重新确认上币')">重新确认</button>
+                <button class="btn btn-plain" onclick="openDetail()">详情</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -855,6 +919,17 @@ function switchPage(page, el) {
     document.getElementById('page-' + page).classList.add('active');
     document.querySelectorAll('.sidebar .sub-menu .menu-item').forEach(function(m) { m.classList.remove('active'); });
     if (el) el.classList.add('active');
+}
+function filterDiscover() {
+    var val = document.getElementById('discoverFilter').value;
+    var cards = document.querySelectorAll('#discoverGrid .discover-card');
+    cards.forEach(function(c) {
+        if (val === 'all' || c.getAttribute('data-status') === val) {
+            c.style.display = '';
+        } else {
+            c.style.display = 'none';
+        }
+    });
 }
 function goTask() {
     document.querySelectorAll('.page-view').forEach(function(p) { p.classList.remove('active'); });
