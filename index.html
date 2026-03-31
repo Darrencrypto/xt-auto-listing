@@ -390,20 +390,20 @@
         <div class="kanban-col">
             <div class="kanban-col-header">待确认 <span class="count">2</span></div>
             <div class="kanban-col-body">
-                <div class="kanban-card"><div class="coin-name">PEPE2.0</div><div class="coin-chain">ETH · ERC20</div><div class="coin-time">10分钟前</div></div>
-                <div class="kanban-card"><div class="coin-name">MOODENG</div><div class="coin-chain">SOL · SPL</div><div class="coin-time">25分钟前</div></div>
+                <div class="kanban-card" onclick="goTask()"><div class="coin-name">PEPE2.0</div><div class="coin-chain">ETH · ERC20</div><div class="coin-time">10分钟前</div></div>
+                <div class="kanban-card" onclick="goTask()"><div class="coin-name">MOODENG</div><div class="coin-chain">SOL · SPL</div><div class="coin-time">25分钟前</div></div>
             </div>
         </div>
         <div class="kanban-col">
             <div class="kanban-col-header">节点1·钱包 <span class="count">1</span></div>
             <div class="kanban-col-body">
-                <div class="kanban-card"><div class="coin-name">WIF</div><div class="coin-chain">SOL · SPL</div><div class="coin-time">等待审批 45min</div></div>
+                <div class="kanban-card" onclick="goTask()"><div class="coin-name">WIF</div><div class="coin-chain">SOL · SPL</div><div class="coin-time">等待审批 45min</div></div>
             </div>
         </div>
         <div class="kanban-col">
             <div class="kanban-col-header">节点2·后台 <span class="count">1</span></div>
             <div class="kanban-col-body">
-                <div class="kanban-card"><div class="coin-name">BOME</div><div class="coin-chain">SOL · SPL</div><div class="coin-time">AI配置中</div></div>
+                <div class="kanban-card" onclick="goTask()"><div class="coin-name">BOME</div><div class="coin-chain">SOL · SPL</div><div class="coin-time">AI配置中</div></div>
             </div>
         </div>
         <div class="kanban-col">
@@ -413,13 +413,13 @@
         <div class="kanban-col">
             <div class="kanban-col-header">节点4·做市 <span class="count">1</span></div>
             <div class="kanban-col-body">
-                <div class="kanban-card"><div class="coin-name">NEIRO</div><div class="coin-chain">ETH · ERC20</div><div class="coin-time">等待审批 20min</div></div>
+                <div class="kanban-card" onclick="goTask()"><div class="coin-name">NEIRO</div><div class="coin-chain">ETH · ERC20</div><div class="coin-time">等待审批 20min</div></div>
             </div>
         </div>
         <div class="kanban-col">
             <div class="kanban-col-header">节点5·上线 <span class="count">1</span></div>
             <div class="kanban-col-body">
-                <div class="kanban-card"><div class="coin-name">TURBO</div><div class="coin-chain">ETH · ERC20</div><div class="coin-time">今日14:00上线</div></div>
+                <div class="kanban-card" onclick="goTask()"><div class="coin-name">TURBO</div><div class="coin-chain">ETH · ERC20</div><div class="coin-time">今日14:00上线</div></div>
             </div>
         </div>
     </div>
@@ -792,6 +792,13 @@ function switchPage(page, el) {
     document.getElementById('page-' + page).classList.add('active');
     document.querySelectorAll('.sidebar .sub-menu .menu-item').forEach(function(m) { m.classList.remove('active'); });
     if (el) el.classList.add('active');
+}
+function goTask() {
+    document.querySelectorAll('.page-view').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById('page-tasks').classList.add('active');
+    document.querySelectorAll('.sidebar .sub-menu .menu-item').forEach(function(m) { m.classList.remove('active'); });
+    document.querySelectorAll('.sidebar .sub-menu .menu-item')[3].classList.add('active');
+    openDetail();
 }
 function openDetail() {
     document.getElementById('detailPanel').classList.add('show');
