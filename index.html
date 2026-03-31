@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自主上币系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            font-size: 13px; color: #333; background: #f0f2f5;
+        }
+
+        /* ===== Top Navigation Bar (严格复刻) ===== */
+        .top-nav {
+            height: 40px; background: #1d1e23; display: flex; align-items: center;
+            padding: 0 12px; color: #ccc; font-size: 12px;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+        }
+        .top-nav .logo { display: flex; align-items: center; margin-right: 8px; flex-shrink: 0; }
+        .top-nav .logo svg { width: 24px; height: 24px; margin-right: 4px; }
+        .top-nav .logo span { font-weight: bold; color: #f0b90b; font-size: 14px; }
+        .top-nav .nav-items { display: flex; align-items: center; gap: 0; flex: 1; overflow: hidden; }
+        .top-nav .nav-items a {
+            color: #aaa; text-decoration: none; padding: 4px 7px; border-radius: 4px;
+            white-space: nowrap; font-size: 12px; transition: color 0.2s;
+        }
+        .top-nav .nav-items a:hover { color: #fff; }
+        .top-nav .nav-items a.active { color: #BAFF00; }
+        .top-nav .nav-right {
+            display: flex; align-items: center; gap: 12px; margin-left: auto;
+            white-space: nowrap; flex-shrink: 0;
+        }
+        .top-nav .nav-right span { color: #aaa; font-size: 12px; }
+        .top-nav .nav-right .icon-btn { color: #aaa; cursor: pointer; font-size: 14px; }
+        .top-nav .nav-right .avatar {
+            width: 24px; height: 24px; border-radius: 50%; background: #444;
+            display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px;
+        }
+
+        /* ===== Left Sidebar (严格复刻) ===== */
+        .sidebar {
+            width: 140px; background: #242e38; position: fixed; top: 40px; left: 0; bottom: 0;
+            z-index: 999; overflow-y: auto; color: #bbb;
+        }
+        .sidebar .sidebar-title {
+            padding: 14px 12px 10px; font-size: 13px; font-weight: 600; color: #fff;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .sidebar .menu-group { padding: 4px 0; }
+        .sidebar .menu-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 16px; color: #bbb; font-size: 13px; cursor: pointer;
+            transition: background 0.2s; text-decoration: none;
+        }
+        .sidebar .menu-item:hover { background: rgba(255,255,255,0.05); }
+        .sidebar .menu-item .arrow { font-size: 10px; color: #666; transition: transform 0.2s; }
+        .sidebar .menu-item.expanded .arrow { transform: rotate(90deg); }
+        .sidebar .sub-menu { display: none; }
+        .sidebar .sub-menu.show { display: block; }
+        .sidebar .sub-menu .menu-item { padding-left: 28px; font-size: 12px; color: #999; }
+        .sidebar .sub-menu .menu-item.active { color: #BAFF00; background: rgba(186, 255, 0, 0.08); }
+
+        /* ===== Main Content ===== */
+        .main-content {
+            margin-left: 140px; margin-top: 40px; padding: 16px 20px;
+            min-height: calc(100vh - 40px);
+        }
+        .page-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 16px; }
+        .page-view { display: none; }
+        .page-view.active { display: block; }
+
+        /* ===== Filter Area ===== */
+        .filter-area { background: #fff; border-radius: 4px; padding: 16px; margin-bottom: 12px; }
+        .filter-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+        .filter-row:last-child { margin-bottom: 0; }
+        .filter-select {
+            height: 32px; padding: 0 28px 0 10px; border: 1px solid #dcdfe6; border-radius: 4px;
+            font-size: 13px; color: #606266; background: #fff; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23C0C4CC'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center; min-width: 160px; cursor: pointer;
+        }
+        .filter-input {
+            height: 32px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px;
+            font-size: 13px; color: #606266; min-width: 200px;
+        }
+        .filter-input::placeholder { color: #C0C4CC; }
+        .filter-right { margin-left: auto; display: flex; gap: 8px; }
+
+        /* ===== Buttons ===== */
+        .btn {
+            height: 32px; padding: 0 16px; border: none; border-radius: 4px; font-size: 12px;
+            cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+            white-space: nowrap; transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-blue { background: #409eff; color: #fff; }
+        .btn-orange { background: #e6a23c; color: #fff; }
+        .btn-green { background: #67c23a; color: #fff; }
+        .btn-red { background: #f56c6c; color: #fff; }
+        .btn-search { background: #409eff; color: #fff; min-width: 64px; }
+        .btn-reset { background: #e6a23c; color: #fff; min-width: 64px; }
+        .btn-plain {
+            height: 32px; padding: 0 16px; border: 1px solid #dcdfe6; border-radius: 4px;
+            background: #fff; color: #606266; font-size: 12px; cursor: pointer;
+        }
+        .btn-plain:hover { border-color: #409eff; color: #409eff; }
+        .action-buttons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+        /* ===== Data Table ===== */
+        .table-wrapper { background: #fff; border-radius: 4px; overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .data-table thead { background: #f5f7fa; }
+        .data-table th {
+            padding: 10px 8px; text-align: left; font-weight: 600; color: #909399;
+            border-bottom: 1px solid #ebeef5; white-space: nowrap; font-size: 12px;
+        }
+        .data-table td {
+            padding: 10px 8px; border-bottom: 1px solid #ebeef5; color: #606266;
+            vertical-align: middle; font-size: 12px;
+        }
+        .data-table tbody tr:hover { background: #f5f7fa; }
+        .op-link { color: #409eff; text-decoration: none; margin-right: 6px; cursor: pointer; font-size: 12px; }
+        .op-link:hover { text-decoration: underline; }
+        .op-link.danger { color: #f56c6c; }
+        .op-link.success { color: #67c23a; }
+        .op-link.warning { color: #e6a23c; }
+
+        /* ===== Tags ===== */
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; }
+        .tag-blue { background: #ecf5ff; color: #409eff; border: 1px solid #d9ecff; }
+        .tag-green { background: #f0f9eb; color: #67c23a; border: 1px solid #e1f3d8; }
+        .tag-orange { background: #fdf6ec; color: #e6a23c; border: 1px solid #faecd8; }
+        .tag-red { background: #fef0f0; color: #f56c6c; border: 1px solid #fde2e2; }
+        .tag-gray { background: #f4f4f5; color: #909399; border: 1px solid #e9e9eb; }
+        .tag-purple { background: #f4ecfb; color: #9b59b6; border: 1px solid #e8d5f5; }
+
+        /* ===== Stats Cards ===== */
+        .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+        .stat-card { background: #fff; border-radius: 4px; padding: 14px 16px; border-left: 3px solid #409eff; }
+        .stat-card .label { font-size: 12px; color: #909399; margin-bottom: 4px; }
+        .stat-card .value { font-size: 22px; font-weight: 700; color: #303133; }
+        .stat-card .sub { font-size: 11px; color: #909399; margin-top: 2px; }
+        .stat-card.orange { border-left-color: #e6a23c; }
+        .stat-card.green { border-left-color: #67c23a; }
+        .stat-card.red { border-left-color: #f56c6c; }
+        .stat-card.purple { border-left-color: #9b59b6; }
+
+        /* ===== Kanban ===== */
+        .kanban { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 16px; }
+        .kanban-col { background: #fff; border-radius: 4px; min-height: 180px; }
+        .kanban-col-header {
+            padding: 8px 10px; font-size: 12px; font-weight: 600; color: #606266;
+            border-bottom: 1px solid #ebeef5; display: flex; justify-content: space-between; align-items: center;
+        }
+        .kanban-col-header .count {
+            background: #f0f2f5; color: #909399; font-size: 10px;
+            padding: 1px 6px; border-radius: 8px;
+        }
+        .kanban-col-body { padding: 6px; }
+        .kanban-card {
+            background: #fafafa; border: 1px solid #ebeef5; border-radius: 3px;
+            padding: 8px; margin-bottom: 4px; cursor: pointer; transition: box-shadow 0.2s;
+        }
+        .kanban-card:hover { box-shadow: 0 1px 6px rgba(0,0,0,0.08); }
+        .kanban-card .coin-name { font-size: 12px; font-weight: 600; color: #303133; }
+        .kanban-card .coin-chain { font-size: 11px; color: #909399; margin-top: 2px; }
+        .kanban-card .coin-time { font-size: 10px; color: #c0c4cc; margin-top: 3px; }
+
+        /* ===== Node Progress ===== */
+        .node-progress { display: flex; align-items: center; gap: 2px; }
+        .node-dot {
+            width: 18px; height: 18px; border-radius: 50%; font-size: 10px; font-weight: 600;
+            display: flex; align-items: center; justify-content: center; color: #fff;
+        }
+        .node-dot.done { background: #67c23a; }
+        .node-dot.active { background: #409eff; }
+        .node-dot.pending { background: #dcdfe6; color: #909399; }
+        .node-dot.fail { background: #f56c6c; }
+        .node-line { width: 10px; height: 2px; background: #dcdfe6; }
+        .node-line.done { background: #67c23a; }
+
+        /* ===== Detail Side Panel ===== */
+        .overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 1000; }
+        .overlay.show { display: block; }
+        .detail-panel {
+            display: none; position: fixed; top: 40px; right: 0; bottom: 0; width: 640px;
+            background: #fff; z-index: 1001; box-shadow: -4px 0 16px rgba(0,0,0,0.1);
+            overflow-y: auto; animation: slideIn 0.2s ease;
+        }
+        .detail-panel.show { display: block; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .detail-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 20px; border-bottom: 1px solid #ebeef5;
+            position: sticky; top: 0; background: #fff; z-index: 1;
+        }
+        .detail-header h3 { font-size: 15px; font-weight: 600; color: #303133; }
+        .detail-close {
+            width: 28px; height: 28px; border: none; background: none; font-size: 18px;
+            color: #909399; cursor: pointer; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .detail-close:hover { background: #f2f3f5; color: #303133; }
+        .detail-body { padding: 16px 20px; }
+        .detail-section { margin-bottom: 18px; }
+        .detail-section-title {
+            font-size: 13px; font-weight: 600; color: #303133; margin-bottom: 8px;
+            padding-bottom: 6px; border-bottom: 1px solid #ebeef5;
+        }
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+        .detail-item .dl { font-size: 11px; color: #909399; }
+        .detail-item .dv { font-size: 12px; color: #303133; margin-top: 1px; word-break: break-all; }
+
+        /* ===== Timeline ===== */
+        .timeline { position: relative; padding-left: 22px; }
+        .timeline::before {
+            content: ''; position: absolute; left: 8px; top: 4px; bottom: 4px;
+            width: 2px; background: #ebeef5;
+        }
+        .timeline-item { position: relative; padding-bottom: 16px; }
+        .timeline-item:last-child { padding-bottom: 0; }
+        .tl-dot {
+            position: absolute; left: -22px; top: 2px; width: 18px; height: 18px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 9px; font-weight: 600; color: #fff;
+        }
+        .tl-dot.done { background: #67c23a; }
+        .tl-dot.active { background: #409eff; }
+        .tl-dot.pending { background: #dcdfe6; color: #909399; }
+        .tl-title { font-size: 12px; font-weight: 600; color: #303133; margin-bottom: 2px; }
+        .tl-desc { font-size: 11px; color: #909399; }
+        .tl-meta { font-size: 10px; color: #c0c4cc; margin-top: 2px; }
+        .tl-data {
+            margin-top: 4px; background: #f5f7fa; border-radius: 3px;
+            padding: 6px 10px; font-size: 11px; color: #606266; line-height: 1.6;
+        }
+
+        /* ===== Config Form ===== */
+        .config-card { background: #fff; border-radius: 4px; padding: 16px; margin-bottom: 12px; }
+        .config-card h4 { font-size: 13px; font-weight: 600; color: #303133; margin-bottom: 12px; }
+        .form-row { display: flex; align-items: center; margin-bottom: 10px; gap: 10px; }
+        .form-label { width: 130px; font-size: 12px; color: #606266; text-align: right; flex-shrink: 0; }
+        .form-value { flex: 1; }
+        .form-input {
+            height: 32px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px;
+            font-size: 13px; color: #606266; width: 100%;
+        }
+        .form-input:focus { border-color: #409eff; outline: none; }
+        .form-hint { font-size: 11px; color: #c0c4cc; margin-top: 2px; }
+
+        /* ===== Report Bar Chart ===== */
+        .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .chart-card { background: #fff; border-radius: 4px; padding: 14px; }
+        .chart-card h4 { font-size: 12px; font-weight: 600; color: #303133; margin-bottom: 10px; }
+        .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding: 0 8px; }
+        .bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; }
+        .bar-item .bar { width: 100%; border-radius: 2px 2px 0 0; min-height: 4px; }
+        .bar-item .bar-label { font-size: 10px; color: #909399; margin-top: 4px; text-align: center; }
+
+        /* ===== Discover Cards ===== */
+        .discover-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .discover-card {
+            background: #fff; border-radius: 4px; padding: 14px; border: 1px solid #ebeef5;
+            cursor: pointer; transition: box-shadow 0.2s;
+        }
+        .discover-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .discover-card .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .discover-card .coin-sym { font-size: 14px; font-weight: 700; color: #303133; }
+        .discover-card .coin-chg { font-size: 12px; font-weight: 600; }
+        .discover-card .coin-chg.up { color: #67c23a; }
+        .discover-card .coin-chg.down { color: #f56c6c; }
+        .discover-card .card-info { font-size: 12px; color: #909399; line-height: 1.7; }
+        .discover-card .card-actions { margin-top: 10px; display: flex; gap: 6px; }
+        .discover-card .card-actions .btn { height: 26px; font-size: 11px; padding: 0 10px; }
+
+        /* ===== Pagination ===== */
+        .pagination {
+            display: flex; align-items: center; justify-content: flex-end;
+            padding: 10px 12px; gap: 4px; font-size: 12px; color: #606266;
+        }
+        .pg-btn {
+            min-width: 28px; height: 28px; border: 1px solid #dcdfe6; border-radius: 4px;
+            background: #fff; color: #606266; font-size: 12px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .pg-btn.active { background: #409eff; color: #fff; border-color: #409eff; }
+    </style>
+</head>
+<body>
+
+<!-- ===== Top Navigation Bar ===== -->
+<div class="top-nav">
+    <div class="logo">
+        <img src="data:image/png;base64,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" style="width:24px;height:24px;margin-right:4px;">
+    </div>
+    <div class="nav-items">
+        <a href="#">权限</a>
+        <a href="#">合约</a>
+        <a href="#">NFT</a>
+        <a href="#">理财</a>
+        <a href="#">跟单</a>
+        <a href="#">运营</a>
+        <a href="#">用户</a>
+        <a href="#">审核</a>
+        <a href="#">现货</a>
+        <a href="#">法币</a>
+        <a href="#">运维</a>
+        <a href="#">质押借贷</a>
+        <a href="#">杠杆</a>
+        <a href="#">营销中台</a>
+        <a href="#">策略管理</a>
+        <a href="#" class="active">自主上币</a>
+        <a href="#">报表</a>
+        <a href="#">网格</a>
+        <a href="#">租户</a>
+        <a href="#">COSMOS</a>
+        <a href="#">对冲系统</a>
+        <a href="#">SEO</a>
+    </div>
+    <div class="nav-right">
+        <span>特审核</span>
+        <div class="icon-btn">🔔</div>
+        <span>管理员</span>
+        <div class="avatar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Left Sidebar ===== -->
+<div class="sidebar">
+    <div class="sidebar-title">自主上币系统</div>
+    <div class="menu-group">
+        <div class="menu-item expanded" onclick="toggleMenu(this)">
+            <span>数据分析</span>
+            <span class="arrow">›</span>
+        </div>
+        <div class="sub-menu show">
+            <div class="menu-item active" onclick="switchPage('dashboard',this)">
+                <span>总览看板</span>
+            </div>
+            <div class="menu-item" onclick="switchPage('report',this)">
+                <span>上币分析</span>
+            </div>
+        </div>
+        <div class="menu-item expanded" onclick="toggleMenu(this)">
+            <span>上币管理</span>
+            <span class="arrow">›</span>
+        </div>
+        <div class="sub-menu show">
+            <div class="menu-item" onclick="switchPage('discover',this)">
+                <span>热门币发现</span>
+            </div>
+            <div class="menu-item" onclick="switchPage('tasks',this)">
+                <span>上币任务</span>
+            </div>
+        </div>
+        <div class="menu-item expanded" onclick="toggleMenu(this)">
+            <span>系统管理</span>
+            <span class="arrow">›</span>
+        </div>
+        <div class="sub-menu show">
+            <div class="menu-item" onclick="switchPage('logs',this)">
+                <span>AI操作日志</span>
+            </div>
+            <div class="menu-item" onclick="switchPage('config',this)">
+                <span>配置管理</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Main Content ===== -->
+<div class="main-content">
+
+<!-- ========== PAGE: Dashboard ========== -->
+<div class="page-view active" id="page-dashboard">
+    <div class="page-title">总览看板</div>
+    <div class="stats-row">
+        <div class="stat-card"><div class="label">今日AI发现</div><div class="value">12</div><div class="sub">较昨日 +3</div></div>
+        <div class="stat-card orange"><div class="label">审批中</div><div class="value">3</div><div class="sub">最久等待 2h</div></div>
+        <div class="stat-card green"><div class="label">本月已上线</div><div class="value">18</div><div class="sub">环比 +28%</div></div>
+        <div class="stat-card red"><div class="label">已拒绝</div><div class="value">4</div><div class="sub">本月</div></div>
+        <div class="stat-card purple"><div class="label">平均上币耗时</div><div class="value">4.2h</div><div class="sub">环比 -1.5h</div></div>
+    </div>
+
+    <div class="page-title" style="font-size:13px;">流水线看板</div>
+    <div class="kanban">
+        <div class="kanban-col">
+            <div class="kanban-col-header">待确认 <span class="count">2</span></div>
+            <div class="kanban-col-body">
+                <div class="kanban-card"><div class="coin-name">PEPE2.0</div><div class="coin-chain">ETH · ERC20</div><div class="coin-time">10分钟前</div></div>
+                <div class="kanban-card"><div class="coin-name">MOODENG</div><div class="coin-chain">SOL · SPL</div><div class="coin-time">25分钟前</div></div>
+            </div>
+        </div>
+        <div class="kanban-col">
+            <div class="kanban-col-header">节点1·钱包 <span class="count">1</span></div>
+            <div class="kanban-col-body">
+                <div class="kanban-card"><div class="coin-name">WIF</div><div class="coin-chain">SOL · SPL</div><div class="coin-time">等待审批 45min</div></div>
+            </div>
+        </div>
+        <div class="kanban-col">
+            <div class="kanban-col-header">节点2·后台 <span class="count">1</span></div>
+            <div class="kanban-col-body">
+                <div class="kanban-card"><div class="coin-name">BOME</div><div class="coin-chain">SOL · SPL</div><div class="coin-time">AI配置中</div></div>
+            </div>
+        </div>
+        <div class="kanban-col">
+            <div class="kanban-col-header">节点3·测试 <span class="count">0</span></div>
+            <div class="kanban-col-body" style="color:#c0c4cc;font-size:11px;text-align:center;padding-top:40px;">暂无</div>
+        </div>
+        <div class="kanban-col">
+            <div class="kanban-col-header">节点4·做市 <span class="count">1</span></div>
+            <div class="kanban-col-body">
+                <div class="kanban-card"><div class="coin-name">NEIRO</div><div class="coin-chain">ETH · ERC20</div><div class="coin-time">等待审批 20min</div></div>
+            </div>
+        </div>
+        <div class="kanban-col">
+            <div class="kanban-col-header">节点5·上线 <span class="count">1</span></div>
+            <div class="kanban-col-body">
+                <div class="kanban-card"><div class="coin-name">TURBO</div><div class="coin-chain">ETH · ERC20</div><div class="coin-time">今日14:00上线</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-title" style="font-size:13px;">最近上线</div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead><tr><th>币种</th><th>链</th><th>上线时间</th><th>耗时</th><th>首日交易量</th><th>24h涨跌</th><th>状态</th></tr></thead>
+            <tbody>
+                <tr><td><b>GOAT</b></td><td>SOL</td><td>2026-03-30 14:00</td><td>3.5h</td><td>$1,240,000</td><td style="color:#67c23a">+34.5%</td><td><span class="tag tag-green">已上线</span></td></tr>
+                <tr><td><b>SPX</b></td><td>ETH</td><td>2026-03-29 12:00</td><td>5.1h</td><td>$820,000</td><td style="color:#f56c6c">-12.3%</td><td><span class="tag tag-green">已上线</span></td></tr>
+                <tr><td><b>POPCAT</b></td><td>SOL</td><td>2026-03-28 16:00</td><td>2.8h</td><td>$2,100,000</td><td style="color:#67c23a">+56.7%</td><td><span class="tag tag-green">已上线</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ========== PAGE: Discover ========== -->
+<div class="page-view" id="page-discover">
+    <div class="page-title">热门币发现</div>
+    <div class="filter-area">
+        <div class="filter-row">
+            <select class="filter-select"><option>全部状态</option><option>待确认</option><option>已确认</option><option>观察池</option></select>
+            <select class="filter-select"><option>全部链</option><option>ETH</option><option>SOL</option><option>BSC</option><option>BASE</option></select>
+            <input class="filter-input" placeholder="搜索币种名称或合约">
+            <div class="filter-right">
+                <button class="btn btn-search">查询</button>
+                <button class="btn btn-reset">重置</button>
+            </div>
+        </div>
+    </div>
+    <div class="discover-grid">
+        <div class="discover-card">
+            <div class="card-head"><span class="coin-sym">PEPE2.0</span><span class="coin-chg up">+128.5%</span></div>
+            <div class="card-info">链: <b>ETH</b> · ERC20<br>市值: $45,200,000<br>已上线: Bybit, Gate, MEXC<br>合约: 0x3a4f...8b2c</div>
+            <div class="card-actions">
+                <button class="btn btn-green" onclick="alert('已确认上币，AI 将发起审批流')">确认上币</button>
+                <button class="btn btn-plain">加入观察</button>
+                <button class="btn btn-plain">详情</button>
+            </div>
+        </div>
+        <div class="discover-card">
+            <div class="card-head"><span class="coin-sym">MOODENG</span><span class="coin-chg up">+85.2%</span></div>
+            <div class="card-info">链: <b>SOL</b> · SPL<br>市值: $120,500,000<br>已上线: Binance, OKX, Bybit<br>合约: 7gkR...4xZn</div>
+            <div class="card-actions">
+                <button class="btn btn-green">确认上币</button>
+                <button class="btn btn-plain">加入观察</button>
+                <button class="btn btn-plain">详情</button>
+            </div>
+        </div>
+        <div class="discover-card">
+            <div class="card-head"><span class="coin-sym">BRETT</span><span class="coin-chg up">+62.1%</span></div>
+            <div class="card-info">链: <b>BASE</b> · ERC20<br>市值: $78,000,000<br>已上线: Bybit, Gate, KuCoin<br>合约: 0x5327...9a1d</div>
+            <div class="card-actions">
+                <button class="btn btn-green">确认上币</button>
+                <button class="btn btn-plain">加入观察</button>
+                <button class="btn btn-plain">详情</button>
+            </div>
+        </div>
+        <div class="discover-card">
+            <div class="card-head"><span class="coin-sym">MOTHER</span><span class="coin-chg up">+41.8%</span></div>
+            <div class="card-info">链: <b>SOL</b> · SPL<br>市值: $55,000,000<br>已上线: MEXC, Gate<br>合约: 3S8q...Vn7m</div>
+            <div class="card-actions">
+                <button class="btn btn-green">确认上币</button>
+                <button class="btn btn-plain">加入观察</button>
+                <button class="btn btn-plain">详情</button>
+            </div>
+        </div>
+        <div class="discover-card">
+            <div class="card-head"><span class="coin-sym">PNUT</span><span class="coin-chg down">-5.3%</span></div>
+            <div class="card-info">链: <b>SOL</b> · SPL<br>市值: $230,000,000<br>已上线: Binance, OKX, Bybit, Gate<br>合约: 2qEH...8pXr</div>
+            <div class="card-actions">
+                <button class="btn btn-green">确认上币</button>
+                <button class="btn btn-plain">加入观察</button>
+                <button class="btn btn-plain">详情</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== PAGE: Tasks ========== -->
+<div class="page-view" id="page-tasks">
+    <div class="page-title">上币任务</div>
+    <div class="filter-area">
+        <div class="filter-row">
+            <select class="filter-select"><option>全部状态</option><option>进行中</option><option>已完成</option><option>已拒绝</option></select>
+            <select class="filter-select"><option>全部节点</option><option>节点1·钱包</option><option>节点2·后台</option><option>节点3·测试</option><option>节点4·做市</option><option>节点5·上线</option></select>
+            <input class="filter-input" placeholder="搜索币种名称">
+            <div class="filter-right">
+                <button class="btn btn-search">查询</button>
+                <button class="btn btn-reset">重置</button>
+            </div>
+        </div>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead><tr><th>币种</th><th>链</th><th>交易对</th><th>当前节点</th><th>节点进度</th><th>审批人</th><th>等待时长</th><th>发起时间</th><th>操作</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td><b>TURBO</b></td><td>ETH</td><td>TURBO/USDT</td>
+                    <td><span class="tag tag-green">节点5·上线</span></td>
+                    <td><div class="node-progress"><div class="node-dot done">1</div><div class="node-line done"></div><div class="node-dot done">2</div><div class="node-line done"></div><div class="node-dot done">3</div><div class="node-line done"></div><div class="node-dot done">4</div><div class="node-line done"></div><div class="node-dot active">5</div></div></td>
+                    <td>待确认时间</td><td>20min</td><td>2026-03-31 09:00</td>
+                    <td><a class="op-link" onclick="openDetail()">详情</a></td>
+                </tr>
+                <tr>
+                    <td><b>NEIRO</b></td><td>ETH</td><td>NEIRO/USDT</td>
+                    <td><span class="tag tag-orange">节点4·做市</span></td>
+                    <td><div class="node-progress"><div class="node-dot done">1</div><div class="node-line done"></div><div class="node-dot done">2</div><div class="node-line done"></div><div class="node-dot done">3</div><div class="node-line done"></div><div class="node-dot active">4</div><div class="node-line"></div><div class="node-dot pending">5</div></div></td>
+                    <td>sky jin</td><td>20min</td><td>2026-03-31 08:30</td>
+                    <td><a class="op-link" onclick="openDetail()">详情</a></td>
+                </tr>
+                <tr>
+                    <td><b>BOME</b></td><td>SOL</td><td>BOME/USDT</td>
+                    <td><span class="tag tag-blue">节点2·后台</span></td>
+                    <td><div class="node-progress"><div class="node-dot done">1</div><div class="node-line done"></div><div class="node-dot active">2</div><div class="node-line"></div><div class="node-dot pending">3</div><div class="node-line"></div><div class="node-dot pending">4</div><div class="node-line"></div><div class="node-dot pending">5</div></div></td>
+                    <td>AI配置中</td><td>—</td><td>2026-03-31 08:00</td>
+                    <td><a class="op-link" onclick="openDetail()">详情</a></td>
+                </tr>
+                <tr>
+                    <td><b>WIF</b></td><td>SOL</td><td>WIF/USDT</td>
+                    <td><span class="tag tag-purple">节点1·钱包</span></td>
+                    <td><div class="node-progress"><div class="node-dot active">1</div><div class="node-line"></div><div class="node-dot pending">2</div><div class="node-line"></div><div class="node-dot pending">3</div><div class="node-line"></div><div class="node-dot pending">4</div><div class="node-line"></div><div class="node-dot pending">5</div></div></td>
+                    <td>Orange Xu</td><td>45min</td><td>2026-03-31 07:30</td>
+                    <td><a class="op-link" onclick="openDetail()">详情</a></td>
+                </tr>
+                <tr>
+                    <td><b>GOAT</b></td><td>SOL</td><td>GOAT/USDT</td>
+                    <td><span class="tag tag-green">已上线</span></td>
+                    <td><div class="node-progress"><div class="node-dot done">1</div><div class="node-line done"></div><div class="node-dot done">2</div><div class="node-line done"></div><div class="node-dot done">3</div><div class="node-line done"></div><div class="node-dot done">4</div><div class="node-line done"></div><div class="node-dot done">5</div></div></td>
+                    <td>—</td><td>—</td><td>2026-03-30 10:30</td>
+                    <td><a class="op-link" onclick="openDetail()">详情</a></td>
+                </tr>
+                <tr>
+                    <td><b>MAGA</b></td><td>ETH</td><td>MAGA/USDT</td>
+                    <td><span class="tag tag-red">已拒绝</span></td>
+                    <td><div class="node-progress"><div class="node-dot done">1</div><div class="node-line done"></div><div class="node-dot fail">2</div><div class="node-line"></div><div class="node-dot pending">3</div><div class="node-line"></div><div class="node-dot pending">4</div><div class="node-line"></div><div class="node-dot pending">5</div></div></td>
+                    <td>—</td><td>—</td><td>2026-03-29 15:00</td>
+                    <td><a class="op-link" onclick="openDetail()">详情</a></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="pagination">
+            <span>共 23 条</span>
+            <button class="pg-btn">‹</button><button class="pg-btn active">1</button><button class="pg-btn">2</button><button class="pg-btn">3</button><button class="pg-btn">›</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== PAGE: Logs ========== -->
+<div class="page-view" id="page-logs">
+    <div class="page-title">AI操作日志</div>
+    <div class="filter-area">
+        <div class="filter-row">
+            <select class="filter-select"><option>全部币种</option><option>TURBO</option><option>NEIRO</option><option>BOME</option><option>WIF</option></select>
+            <select class="filter-select"><option>全部操作</option><option>采集信息</option><option>后台配置</option><option>充提测试</option><option>榜单配置</option></select>
+            <select class="filter-select"><option>全部状态</option><option>成功</option><option>失败</option></select>
+            <div class="filter-right">
+                <button class="btn btn-search">查询</button>
+                <button class="btn btn-reset">重置</button>
+            </div>
+        </div>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead><tr><th>时间</th><th>币种</th><th>节点</th><th>操作</th><th>接口</th><th>耗时</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+                <tr><td>2026-03-31 09:12:45</td><td><b>TURBO</b></td><td>节点4</td><td>配置榜单</td><td>/api/spot/ranking/add</td><td>320ms</td><td style="color:#67c23a">✓ 成功</td><td><a class="op-link">详情</a></td></tr>
+                <tr><td>2026-03-31 09:11:30</td><td><b>TURBO</b></td><td>节点4</td><td>配置收录</td><td>/api/spot/listing/add</td><td>280ms</td><td style="color:#67c23a">✓ 成功</td><td><a class="op-link">详情</a></td></tr>
+                <tr><td>2026-03-31 09:05:12</td><td><b>TURBO</b></td><td>节点3</td><td>充提测试</td><td>/api/wallet/withdraw</td><td>15.2s</td><td style="color:#67c23a">✓ 成功</td><td><a class="op-link">详情</a></td></tr>
+                <tr><td>2026-03-31 08:58:03</td><td><b>TURBO</b></td><td>节点2</td><td>币种资料</td><td>/api/spot/coin/info</td><td>450ms</td><td style="color:#67c23a">✓ 成功</td><td><a class="op-link">详情</a></td></tr>
+                <tr><td>2026-03-31 08:57:20</td><td><b>TURBO</b></td><td>节点2</td><td>关联网络</td><td>/api/spot/coin/network</td><td>380ms</td><td style="color:#67c23a">✓ 成功</td><td><a class="op-link">详情</a></td></tr>
+                <tr><td>2026-03-31 08:56:45</td><td><b>TURBO</b></td><td>节点2</td><td>市场管理</td><td>/api/spot/market/add</td><td>520ms</td><td style="color:#67c23a">✓ 成功</td><td><a class="op-link">详情</a></td></tr>
+                <tr><td>2026-03-31 08:55:10</td><td><b>TURBO</b></td><td>节点2</td><td>币种管理</td><td>/api/spot/coin/add</td><td>610ms</td><td style="color:#67c23a">✓ 成功</td><td><a class="op-link">详情</a></td></tr>
+                <tr><td>2026-03-31 08:42:00</td><td><b>BOME</b></td><td>节点2</td><td>币种管理</td><td>/api/spot/coin/add</td><td>—</td><td style="color:#f56c6c">✗ 币种已存在</td><td><a class="op-link">详情</a> <a class="op-link warning">重试</a></td></tr>
+                <tr><td>2026-03-31 08:30:15</td><td><b>NEIRO</b></td><td>发现</td><td>采集信息</td><td>CoinGecko API</td><td>1.2s</td><td style="color:#67c23a">✓ 成功</td><td><a class="op-link">详情</a></td></tr>
+            </tbody>
+        </table>
+        <div class="pagination">
+            <span>共 156 条</span>
+            <button class="pg-btn">‹</button><button class="pg-btn active">1</button><button class="pg-btn">2</button><button class="pg-btn">3</button><button class="pg-btn">...</button><button class="pg-btn">16</button><button class="pg-btn">›</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== PAGE: Config ========== -->
+<div class="page-view" id="page-config">
+    <div class="page-title">配置管理</div>
+
+    <div class="config-card">
+        <h4>默认参数模板</h4>
+        <div class="form-row"><span class="form-label">展示权重</span><div class="form-value"><input class="form-input" value="1000" style="max-width:200px;"></div></div>
+        <div class="form-row"><span class="form-label">币种精度</span><div class="form-value"><input class="form-input" value="8" style="max-width:200px;"></div></div>
+        <div class="form-row"><span class="form-label">日提币额度</span><div class="form-value"><input class="form-input" value="10000000" style="max-width:200px;"><div class="form-hint">保证价值 > 10万U</div></div></div>
+        <div class="form-row"><span class="form-label">默认提币手续费金额</span><div class="form-value"><input class="form-input" value="1" style="max-width:200px;"><div class="form-hint">BSC链默认0.5</div></div></div>
+        <div class="form-row"><span class="form-label">ETH矿工费系数</span><div class="form-value"><input class="form-input" value="2.5" style="max-width:200px;"></div></div>
+        <div class="form-row"><span class="form-label">开盘保护倍数</span><div class="form-value"><input class="form-input" value="10" style="max-width:200px;"></div></div>
+        <div class="form-row"><span class="form-label">交易金额最小值</span><div class="form-value"><input class="form-input" value="5" style="max-width:200px;"><div class="form-hint">USDT</div></div></div>
+        <div class="form-row"><span class="form-label">榜单有效期</span><div class="form-value"><input class="form-input" value="7" style="max-width:200px;"><div class="form-hint">天</div></div></div>
+        <div class="form-row"><span class="form-label">收录缩放比例</span><div class="form-value"><input class="form-input" value="0.2" style="max-width:200px;"></div></div>
+        <div class="form-row"><span class="form-label"></span><div class="form-value"><button class="btn btn-blue">保存参数</button></div></div>
+    </div>
+
+    <div class="config-card">
+        <h4>审批人配置</h4>
+        <div class="table-wrapper">
+            <table class="data-table" style="min-width:auto;">
+                <thead><tr><th>审批节点</th><th>审批人</th><th>操作</th></tr></thead>
+                <tbody>
+                    <tr><td>节点1·钱包配置</td><td>Orange Xu, Lonnie, Sheng, South, Rambo</td><td><a class="op-link warning">修改</a></td></tr>
+                    <tr><td>节点2·后台上币</td><td>当前操作员</td><td><a class="op-link warning">修改</a></td></tr>
+                    <tr><td>节点3·充提测试</td><td>当前操作员 + 钱包值班</td><td><a class="op-link warning">修改</a></td></tr>
+                    <tr><td>节点4·做市配置</td><td>sky jin, hartley, simon, jz, wicky, carlin</td><td><a class="op-link warning">修改</a></td></tr>
+                    <tr><td>节点5·上线确认</td><td>运营负责人</td><td><a class="op-link warning">修改</a></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="config-card">
+        <h4>AI监控规则</h4>
+        <div class="form-row"><span class="form-label">数据源</span><div class="form-value" style="display:flex;gap:6px;"><span class="tag tag-blue">CoinGecko</span><span class="tag tag-blue">CoinMarketCap</span><span class="tag tag-blue">DexScreener</span></div></div>
+        <div class="form-row"><span class="form-label">最低市值</span><div class="form-value"><input class="form-input" value="10000000" style="max-width:200px;"><div class="form-hint">$10M</div></div></div>
+        <div class="form-row"><span class="form-label">24h涨幅阈值</span><div class="form-value"><input class="form-input" value="30" style="max-width:200px;"><div class="form-hint">%</div></div></div>
+        <div class="form-row"><span class="form-label">最少上线平台数</span><div class="form-value"><input class="form-input" value="2" style="max-width:200px;"></div></div>
+        <div class="form-row"><span class="form-label">监控频率</span><div class="form-value"><input class="form-input" value="5" style="max-width:200px;"><div class="form-hint">分钟</div></div></div>
+        <div class="form-row"><span class="form-label">Lark推送群</span><div class="form-value"><input class="form-input" value="热门币-运营群" style="max-width:300px;"></div></div>
+        <div class="form-row"><span class="form-label"></span><div class="form-value"><button class="btn btn-blue">保存规则</button></div></div>
+    </div>
+</div>
+
+<!-- ========== PAGE: Report ========== -->
+<div class="page-view" id="page-report">
+    <div class="page-title">上币分析</div>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+        <div class="stat-card"><div class="label">本月上币总数</div><div class="value">18</div><div class="sub">热门币15 / 项目方3</div></div>
+        <div class="stat-card green"><div class="label">审批通过率</div><div class="value">82%</div><div class="sub">通过18 / 拒绝4</div></div>
+        <div class="stat-card orange"><div class="label">平均上币耗时</div><div class="value">4.2h</div><div class="sub">最快1.5h / 最慢8.3h</div></div>
+        <div class="stat-card purple"><div class="label">首日平均交易量</div><div class="value">$1.2M</div><div class="sub">最高 POPCAT $2.1M</div></div>
+    </div>
+    <div class="chart-row">
+        <div class="chart-card">
+            <h4>各节点平均耗时</h4>
+            <div class="bar-chart">
+                <div class="bar-item"><div class="bar" style="height:42px;background:#9b59b6;"></div><div class="bar-label">钱包<br>38min</div></div>
+                <div class="bar-item"><div class="bar" style="height:13px;background:#409eff;"></div><div class="bar-label">后台<br>12min</div></div>
+                <div class="bar-item"><div class="bar" style="height:50px;background:#e6a23c;"></div><div class="bar-label">测试<br>45min</div></div>
+                <div class="bar-item"><div class="bar" style="height:75px;background:#f56c6c;"></div><div class="bar-label">做市<br>68min</div></div>
+                <div class="bar-item"><div class="bar" style="height:98px;background:#67c23a;"></div><div class="bar-label">上线<br>89min</div></div>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h4>月度上币趋势</h4>
+            <div class="bar-chart">
+                <div class="bar-item"><div class="bar" style="height:35px;background:#409eff;"></div><div class="bar-label">10月<br>8</div></div>
+                <div class="bar-item"><div class="bar" style="height:48px;background:#409eff;"></div><div class="bar-label">11月<br>11</div></div>
+                <div class="bar-item"><div class="bar" style="height:61px;background:#409eff;"></div><div class="bar-label">12月<br>14</div></div>
+                <div class="bar-item"><div class="bar" style="height:52px;background:#409eff;"></div><div class="bar-label">1月<br>12</div></div>
+                <div class="bar-item"><div class="bar" style="height:70px;background:#409eff;"></div><div class="bar-label">2月<br>16</div></div>
+                <div class="bar-item"><div class="bar" style="height:80px;background:#67c23a;"></div><div class="bar-label">3月<br>18</div></div>
+            </div>
+        </div>
+    </div>
+    <div class="page-title" style="font-size:13px;">瓶颈分析</div>
+    <div class="table-wrapper">
+        <table class="data-table" style="min-width:auto;">
+            <thead><tr><th>节点</th><th>平均等待</th><th>最长等待</th><th>主要瓶颈原因</th><th>建议</th></tr></thead>
+            <tbody>
+                <tr><td>节点5·上线</td><td style="color:#f56c6c;font-weight:600;">89min</td><td>4h 20min</td><td>上线时间需多方协调</td><td>预设默认时间窗口</td></tr>
+                <tr><td>节点4·做市</td><td style="color:#e6a23c;font-weight:600;">68min</td><td>2h 15min</td><td>量化评估等待</td><td>增加量化值班人员</td></tr>
+                <tr><td>节点3·测试</td><td>45min</td><td>1h 30min</td><td>财务买币等待</td><td>预充测试资金池</td></tr>
+                <tr><td>节点1·钱包</td><td>38min</td><td>1h 45min</td><td>钱包配置人工操作</td><td>建立钱包自动化</td></tr>
+                <tr><td>节点2·后台</td><td style="color:#67c23a;font-weight:600;">12min</td><td>25min</td><td>AI自动，仅审批等待</td><td>—</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</div><!-- end main-content -->
+
+<!-- ===== Detail Side Panel ===== -->
+<div class="overlay" id="overlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="detailPanel">
+    <div class="detail-header">
+        <h3>TURBO — 上币详情</h3>
+        <button class="detail-close" onclick="closeDetail()">×</button>
+    </div>
+    <div class="detail-body">
+        <div class="detail-section">
+            <div class="detail-section-title">币种信息</div>
+            <div class="detail-grid">
+                <div class="detail-item"><div class="dl">币种简称</div><div class="dv">TURBO</div></div>
+                <div class="detail-item"><div class="dl">币种全称</div><div class="dv">Turbo Token</div></div>
+                <div class="detail-item"><div class="dl">所属链</div><div class="dv">ETH (ERC20)</div></div>
+                <div class="detail-item"><div class="dl">合约地址</div><div class="dv" style="font-size:11px;">0xa35923...d8f4</div></div>
+                <div class="detail-item"><div class="dl">价格精度</div><div class="dv">8</div></div>
+                <div class="detail-item"><div class="dl">数量精度</div><div class="dv">0</div></div>
+                <div class="detail-item"><div class="dl">发行总量</div><div class="dv">69,000,000,000</div></div>
+                <div class="detail-item"><div class="dl">CoinGecko ID</div><div class="dv">turbo</div></div>
+            </div>
+        </div>
+        <div class="detail-section">
+            <div class="detail-section-title">审批流进度</div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="tl-dot done">✓</div>
+                    <div class="tl-title">节点1·钱包配置 <span class="tag tag-green" style="margin-left:4px;">已通过</span></div>
+                    <div class="tl-desc">审批人: Orange Xu</div>
+                    <div class="tl-meta">2026-03-31 07:45 — 耗时15min</div>
+                    <div class="tl-data">钱包ID: 1892 | 合约: 0xa35923...d8f4</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="tl-dot done">✓</div>
+                    <div class="tl-title">节点2·后台上币 <span class="tag tag-green" style="margin-left:4px;">已通过</span></div>
+                    <div class="tl-desc">审批人: 操作员 | AI自动配置4项</div>
+                    <div class="tl-meta">2026-03-31 08:02 — 耗时8min</div>
+                    <div class="tl-data">✓ 币种管理 (610ms) ✓ 市场管理 (520ms)<br>✓ 关联网络 (380ms) ✓ 币种资料 (450ms)</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="tl-dot done">✓</div>
+                    <div class="tl-title">节点3·充提测试 <span class="tag tag-green" style="margin-left:4px;">已通过</span></div>
+                    <div class="tl-desc">AI自动测试 | 审批人: 钱包值班</div>
+                    <div class="tl-meta">2026-03-31 08:35 — 耗时25min</div>
+                    <div class="tl-data">bizId: 20260331083500128 | 充值✓ 提现✓ 归集✓</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="tl-dot done">✓</div>
+                    <div class="tl-title">节点4·做市配置 <span class="tag tag-green" style="margin-left:4px;">已通过</span></div>
+                    <div class="tl-desc">审批人: sky jin | AI自动配置</div>
+                    <div class="tl-meta">2026-03-31 09:15 — 耗时35min</div>
+                    <div class="tl-data">榜单✓ 收录✓ 做市账户— | 充提开关定时✓</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="tl-dot active">5</div>
+                    <div class="tl-title">节点5·上线 <span class="tag tag-orange" style="margin-left:4px;">等待确认</span></div>
+                    <div class="tl-desc">待确认上线时间</div>
+                    <div class="tl-meta">等待中 — 20min</div>
+                    <div class="tl-data">建议充值: 2026-03-31 14:00 (UTC+8)<br>建议交易: 2026-03-31 14:00 (UTC+8)<br>建议提现: 2026-04-01 14:00 (UTC+8)</div>
+                </div>
+            </div>
+        </div>
+        <div class="detail-section">
+            <div class="detail-section-title">AI配置预览 (节点2)</div>
+            <div class="detail-grid">
+                <div class="detail-item"><div class="dl">币种名称</div><div class="dv">TURBO</div></div>
+                <div class="detail-item"><div class="dl">板块</div><div class="dv">Innovation / hot coin</div></div>
+                <div class="detail-item"><div class="dl">交易对</div><div class="dv">TURBO/USDT</div></div>
+                <div class="detail-item"><div class="dl">反佣</div><div class="dv">是</div></div>
+                <div class="detail-item"><div class="dl">开盘保护</div><div class="dv">10x</div></div>
+                <div class="detail-item"><div class="dl">限价/市价保护</div><div class="dv">是 / 是</div></div>
+                <div class="detail-item"><div class="dl">转账网络</div><div class="dv">ETH (ERC20)</div></div>
+                <div class="detail-item"><div class="dl">提币手续费</div><div class="dv">1 TURBO</div></div>
+                <div class="detail-item"><div class="dl">矿工费</div><div class="dv">是 (系数2.5)</div></div>
+                <div class="detail-item"><div class="dl">小额兑换</div><div class="dv">是</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleMenu(el) {
+    el.classList.toggle('expanded');
+    var sub = el.nextElementSibling;
+    if (sub && sub.classList.contains('sub-menu')) {
+        sub.classList.toggle('show');
+    }
+}
+function switchPage(page, el) {
+    document.querySelectorAll('.page-view').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById('page-' + page).classList.add('active');
+    document.querySelectorAll('.sidebar .sub-menu .menu-item').forEach(function(m) { m.classList.remove('active'); });
+    if (el) el.classList.add('active');
+}
+function openDetail() {
+    document.getElementById('detailPanel').classList.add('show');
+    document.getElementById('overlay').classList.add('show');
+}
+function closeDetail() {
+    document.getElementById('detailPanel').classList.remove('show');
+    document.getElementById('overlay').classList.remove('show');
+}
+</script>
+</body>
+</html>
